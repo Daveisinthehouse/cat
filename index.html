@@ -27,7 +27,8 @@ h1{margin:0;color:#6b3e26;font-size:48px}p{color:#4f453e}.btn{border:0;border-ra
 </div>
 <script>
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),game=document.getElementById('game');
-let W,H,dpr,score=0,best=+localStorage.catBest||0,running=false,muted=false,aimX=.5,treats=[],kittens=[],particles=[],mother={x:.5,y:.89},last=0;\nconst foliage=Array.from({length:34},(_,i)=>({x:.04+((i*37)%92)/100,y:.08+((i*53)%45)/100,r:18+(i*11)%25,s:i%2?1:-1}));
+let W,H,dpr,score=0,best=+localStorage.catBest||0,running=false,muted=false,aimX=.5,treats=[],kittens=[],particles=[],mother={x:.5,y:.89},last=0;
+const foliage=Array.from({length:34},(_,i)=>({x:.04+((i*37)%92)/100,y:.08+((i*53)%45)/100,r:18+(i*11)%25,s:i%2?1:-1}));
 document.getElementById('best').textContent=best;
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=game.clientWidth;H=game.clientHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);resize();
 const branches=[
