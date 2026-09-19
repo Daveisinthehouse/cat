@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>CAT — Kitten Rescue</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
+body{display:flex;justify-content:center;align-items:center}
+#game{position:relative;width:100vw;height:100vh;max-width:700px;overflow:hidden;background:linear-gradient(#75c8ef 0%,#bcecff 55%,#6dbd62 55%,#438c48 100%)}
+canvas{width:100%;height:100%;display:block}
+.hud{position:absolute;top:max(10px,env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;color:#fff;font-weight:800;text-shadow:0 2px 3px #234}
+.badge{background:#173b2dca;border:2px solid #ffffff55;border-radius:14px;padding:7px 11px}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#06131aaa;z-index:5}
+.card{width:min(88%,430px);padding:28px 22px;text-align:center;background:#fff9e9;border:5px solid #71462d;border-radius:28px;box-shadow:0 12px 40px #0007}
+h1{margin:0;color:#6b3e26;font-size:48px}p{color:#4f453e}.btn{border:0;border-radius:18px;background:#e98c35;color:white;font-weight:900;font-size:20px;padding:14px 25px;box-shadow:0 5px 0 #a95520;cursor:pointer}
+.small{font-size:13px;color:#746b63;margin-top:15px}
+#mute{position:absolute;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:4;border:0;border-radius:50%;width:48px;height:48px;background:#173b2dcc;color:white;font-size:22px}
+</style>
+</head>
+<body>
+<div id="game">
+<canvas id="c"></canvas>
+<div class="hud"><div class="badge">😺 RESCUES <span id="score">0</span></div><div class="badge">🐾 KITTENS <span id="left">0</span></div><div class="badge">⭐ BEST <span id="best">0</span></div></div>
+<button id="mute">🔊</button>
+<div id="overlay"><div class="card"><h1>🐱 CAT</h1><h2>Kitten Rescue</h2><p>Help the kittens get safely down from the tree!<br>Slide your finger to aim and tap to throw a tasty treat.</p><button class="btn" id="start">RESCUE THE KITTENS</button><div class="small">🍪 Treats • 😺 Meows • 🌳 Branches • ❤️ Happy reunions</div></div></div>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),game=document.getElementById('game');
+let W,H,dpr,score=0,best=+localStorage.catBest||0,running=false,muted=false,aimX=.5,treats=[],kittens=[],particles=[],mother={x:.5,y:.89},last=0;
+document.getElementById('best').textContent=best;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=game.clientWidth;H=game.clientHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}addEventListener('resize',resize);resize();
+const branches=[
+{x:.12,y:.24,len:.62,a:.05},{x:.20,y:.38,len:.67,a:-.12},{x:.08,y:.52,len:.72,a:.08},
+{x:.27,y:.65,len:.57,a:-.06},{x:.10,y:.76,len:.78,a:.04}
+];
+function bx(b,t){return b.x+b.len*t}
+function by(b,t){return b.y+b.len*t*Math.tan(b.a)}
+function spawn(){kittens=[];let n=7;for(let i=0;i<n;i++){let bi=i%branches.length,t=.16+Math.random()*.7;kittens.push({b:bi,t,dir:Math.random()<.5?-1:1,s:24+Math.random()*5,fall:false,x:0,y:0,vy:0,phase:Math.random()*6,happy:false,color:['#f5b56b','#fff','#777','#d98d65','#f3d18b'][i%5]})}updateCount()}
+function updateCount(){document.getElementById('left').textContent=kittens.filter(k=>!k.happy).length}
+function sound(type){if(muted)return;try{let a=new AudioContext(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);let f=type==='meow'?420:type==='hiss'?130:700;o.frequency.value=f;o.type=type==='hiss'?'sawtooth':'sine';g.gain.setValueAtTime(.06,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.16);o.start();o.stop(a.currentTime+.17)}catch(e){}}
+function start(){score=0;treats=[];particles=[];spawn();running=true;document.getElementById('overlay').style.display='none';last=performance.now();requestAnimationFrame(loop);sound('throw')}
+function finish(){running=false;if(score>best){best=score;localStorage.catBest=best;document.getElementById('best').textContent=best}document.querySelector('.card h1').textContent='😻 WELL DONE!';document.querySelector('.card h2').textContent='All kittens are safe!';document.querySelector('.card p').innerHTML='Mother Cat has all her kittens back.<br><b>Rescues: '+score+'</b>';document.getElementById('start').textContent='PLAY AGAIN';document.getElementById('overlay').style.display='flex'}
+function throwTreat(){if(!running)return;let x=aimX*W;treats.push({x,y:H*.88,vx:(x-W*.5)*.015,vy:-10,r:9});sound('throw')}
+function update(dt){for(const k of kittens){if(k.happy)continue;if(k.fall){k.vy+=.38*dt;k.y+=k.vy*dt;if(k.y>H*.86){k.happy=true;k.x=mother.x*W+(Math.random()-.5)*25;k.y=H*.84;score+=100;for(let j=0;j<12;j++)particles.push({x:k.x,y:k.y,vx:(Math.random()-.5)*5,vy:-Math.random()*5,life:1,t:'❤'});sound('meow')}}else{k.t+=k.dir*.0009*dt;if(k.t<.08||k.t>.92){k.dir*=-1;sound(Math.random()<.25?'hiss':'meow')}k.x=bx(branches[k.b],k.t)*W;k.y=by(branches[k.b],k.t)*H;k.phase+=.06*dt}}
+for(let i=treats.length-1;i>=0;i--){let q=treats[i];q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=.25*dt;for(const k of kittens){if(k.fall||k.happy)continue;if(Math.hypot(q.x-k.x,q.y-k.y)<k.s+q.r){k.fall=true;k.vy=-5;score+=25;for(let j=0;j<8;j++)particles.push({x:k.x,y:k.y,vx:(Math.random()-.5)*4,vy:-Math.random()*4,life:1,t:'🍪'});sound(Math.random()<.25?'hiss':'meow');q.y=-100;break}}if(q.y<-50||q.y>H+50)treats.splice(i,1)}
+for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.12*dt;p.life-=.025*dt;if(p.life<=0)particles.splice(i,1)}
+updateCount();if(kittens.every(k=>k.happy))finish()}
+function drawTree(){ctx.fillStyle='#744327';ctx.fillRect(W*.39,H*.52,W*.22,H*.5);ctx.fillStyle='#8b5632';ctx.beginPath();ctx.ellipse(W*.5,H*.62,W*.17,H*.4,0,0,7);ctx.fill();for(const b of branches){let x1=b.x*W,y1=b.y*H,x2=(b.x+b.len)*W,y2=(b.y+b.len*Math.tan(b.a))*H;ctx.strokeStyle='#774527';ctx.lineWidth=25;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.strokeStyle='#a9683c';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(x1,y1-3);ctx.lineTo(x2,y2-3);ctx.stroke()}ctx.fillStyle='#4e9e4f';for(let i=0;i<22;i++){let x=(.05+Math.random()*.9)*W,y=(.05+Math.random()*.48)*H,r=18+Math.random()*25;ctx.globalAlpha=.18;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}ctx.globalAlpha=1}
+function cat(x,y,color,scale=1,happy=false){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(0,4,18,15,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(-14,-7);ctx.lineTo(-11,-25);ctx.lineTo(-3,-13);ctx.moveTo(14,-7);ctx.lineTo(11,-25);ctx.lineTo(3,-13);ctx.fill();ctx.fillStyle='#222';ctx.beginPath();ctx.arc(-6,-3,2.5,0,7);ctx.arc(6,-3,2.5,0,7);ctx.fill();ctx.strokeStyle='#333';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,2,4,0,Math.PI);ctx.stroke();if(happy){ctx.fillStyle='#ffb4cf';ctx.font='20px sans-serif';ctx.fillText('♥',20,-15)}ctx.restore()}
+function draw(){ctx.clearRect(0,0,W,H);drawTree();ctx.fillStyle='#356d35';ctx.fillRect(0,H*.9,W,H*.1);cat(mother.x*W,H*.86,'#d28b4c',1.35,true);for(const k of kittens){if(!k.happy)cat(k.x,k.y,k.color,.9+Math.sin(k.phase)*.03)}for(const q of treats){ctx.fillStyle='#d58a39';ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,7);ctx.fill();ctx.fillStyle='#fff2b5';ctx.beginPath();ctx.arc(q.x-2,q.y-2,2,0,7);ctx.fill()}ctx.fillStyle='white';ctx.font='22px sans-serif';for(const p of particles){ctx.globalAlpha=Math.max(0,p.life);ctx.fillText(p.t,p.x,p.y)}ctx.globalAlpha=1;ctx.fillStyle='#ffffff99';ctx.fillRect(0,H*.89,W,3);ctx.fillStyle='#fff';ctx.font='bold 14px system-ui';ctx.textAlign='center';ctx.fillText('👆 SLIDE TO AIM  •  TAP TO THROW TREATS',W/2,H-18)}
+function loop(t){if(!running)return;let dt=Math.min(2,(t-last)/16.67);last=t;update(dt);draw();requestAnimationFrame(loop)}
+game.addEventListener('pointermove',e=>{aimX=Math.max(.08,Math.min(.92,e.offsetX/W));});
+game.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;aimX=Math.max(.08,Math.min(.92,e.offsetX/W));throwTreat()});
+document.getElementById('start').onclick=start;document.getElementById('mute').onclick=()=>{muted=!muted;document.getElementById('mute').textContent=muted?'🔇':'🔊'};
+draw();
+</script>
+</body></html>
