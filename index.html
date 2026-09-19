@@ -84,7 +84,7 @@ updateCount();if(score>best){best=score;localStorage.catBest=best;document.getEl
 function drawFoliage(front){
 for(const f of foliage){
  if(f.front!==front)continue;
- ctx.fillStyle=front?'#2f763d':'#3f8f49';ctx.globalAlpha=front?.95:.82;
+ ctx.fillStyle=front?'#2f763d':'#3f8f49';ctx.globalAlpha=front ? .95 : .82;
  ctx.beginPath();ctx.arc(f.x*W,f.y*H,f.r,0,7);ctx.fill();
  ctx.fillStyle=front?'#559c4e':'#66a955';
  ctx.beginPath();ctx.arc((f.x-.012*f.s)*W,(f.y-.012)*H,f.r*.58,0,7);ctx.fill();
