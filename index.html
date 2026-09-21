@@ -42,9 +42,14 @@ const branches=[
 ];
 function bx(b,t){return b.x+b.len*t}
 function by(b,t){return b.y+b.len*t*Math.tan(b.a)}
-function spawn(){kittens=[];let n=7;for(let i=0;i<n;i++){let bi=i%branches.length,t=.16+Math.random()*.7;kittens.push({b:bi,t,dir:Math.random()<.5?-1:1,s:24+Math.random()*5,fall:false,x:0,y:0,vy:0,phase:Math.random()*6,happy:false,color:['#f5b56b','#fff','#777','#d98d65','#f3d18b'][i%5]})}updateCount()}
+function spawn(){kittens=[];let n=7;for(let i=0;i<n;i++){let bi=i%branches.length,t=.16+Math.random()*.7;kittens.push({b:bi,t,dir:Math.random()<.5?-1:1,s:24+Math.random()*5,fall:false,x:0,y:0,vy:0,phase:Math.random()*6,happy:false,jump:null,jumpTimer:4+Math.random()*6,color:['#f5b56b','#fff','#777','#d98d65','#f3d18b'][i%5]})}updateCount()}
+function startJump(k){
+ let toB=Math.floor(Math.random()*branches.length);
+ while(toB===k.b)toB=Math.floor(Math.random()*branches.length);
+ k.jump={fromB:k.b,fromT:k.t,toB,toT:.12+Math.random()*.76,p:0,dur:.65+Math.random()*.3,arc:22+Math.random()*18};
+}
 function spawnBirds(){birds=[];let count=Math.min(3+level-1,8);for(let i=0;i<count;i++){birds.push({x:-60-i*140,y:H*(.14+Math.random()*.50),vx:2.2+Math.random()*.9+level*.12,s:1+Math.random()*.25,phase:Math.random()*6})}}
-function respawnKitten(){let i=kittens.length,b= Math.floor(Math.random()*branches.length),t=.15+Math.random()*.7;kittens.push({b,t,dir:Math.random()<.5?-1:1,s:24+Math.random()*5,fall:false,x:0,y:0,vy:0,phase:Math.random()*6,happy:false,color:['#f5b56b','#fff','#777','#d98d65','#f3d18b'][i%5]});updateCount()}
+function respawnKitten(){let i=kittens.length,b=Math.floor(Math.random()*branches.length),t=.15+Math.random()*.7;kittens.push({b,t,dir:Math.random()<.5?-1:1,s:24+Math.random()*5,fall:false,x:0,y:0,vy:0,phase:Math.random()*6,happy:false,jump:null,jumpTimer:4+Math.random()*6,color:['#f5b56b','#fff','#777','#d98d65','#f3d18b'][i%5]});updateCount()}
 const nest={x:.61,y:.205};
 const hatchTimes=[8,16,24];
 function resetNest(){chicks=[];hatchTimer=0}
@@ -117,7 +122,7 @@ for(const ch of chicks){
  }
 }
 for(const b of birds){b.x+=b.vx*dt;b.phase+=.12*dt;if(b.x>W+80){b.x=-80-Math.random()*140;b.y=H*(.14+Math.random()*.50);b.vx=2.2+Math.random()*.9+level*.12}}
-for(const k of kittens){if(k.happy)continue;if(k.fall){k.vy+=.38*dt;k.y+=k.vy*dt;if(k.y>H*.86){k.happy=true;k.x=mother.x*W+(Math.random()-.5)*25;k.y=H*.84;score+=100;for(let j=0;j<12;j++)particles.push({x:k.x,y:k.y,vx:(Math.random()-.5)*5,vy:-Math.random()*5,life:1,t:'❤'});sound('meow')}}else{k.t+=k.dir*(.0009*(1+(level-1)*.35))*dt;if(k.t<.08||k.t>.92){k.dir*=-1;sound(Math.random()<.25?'hiss':'meow')}k.x=bx(branches[k.b],k.t)*W;k.y=by(branches[k.b],k.t)*H;k.phase+=.06*dt}}
+for(const k of kittens){if(k.happy)continue;if(k.fall){k.vy+=.38*dt;k.y+=k.vy*dt;if(k.y>H*.86){k.happy=true;k.x=mother.x*W+(Math.random()-.5)*25;k.y=H*.84;score+=100;for(let j=0;j<12;j++)particles.push({x:k.x,y:k.y,vx:(Math.random()-.5)*5,vy:-Math.random()*5,life:1,t:'❤'});sound('meow')}}else if(k.jump){k.jump.p+=dt/(16.67*k.jump.dur);let p=Math.min(1,k.jump.p),from=branches[k.jump.fromB],to=branches[k.jump.toB];k.x=(bx(from,k.jump.fromT)+(bx(to,k.jump.toT)-bx(from,k.jump.fromT))*p)*W;k.y=(by(from,k.jump.fromT)+(by(to,k.jump.toT)-by(from,k.jump.fromT))*p)*H-Math.sin(Math.PI*p)*k.jump.arc;k.phase+=.12*dt;if(p>=1){k.b=k.jump.toB;k.t=k.jump.toT;k.jump=null;k.jumpTimer=Math.max(1.5,7.5-level*.45);}}else{k.t+=k.dir*(.0009*(1+(level-1)*.35))*dt;if(k.t<.08||k.t>.92){k.dir*=-1;sound(Math.random()<.25?'hiss':'meow')}k.jumpTimer-=dt/60;if(k.jumpTimer<=0&&level>=1){if(Math.random()<Math.min(.65,.12+level*.09)){startJump(k);particles.push({x:k.x,y:k.y-18,vx:0,vy:-.5,life:1,t:'BOING!'})}k.jumpTimer=Math.max(1.5,8-level*.5)+Math.random()*3}k.x=bx(branches[k.b],k.t)*W;k.y=by(branches[k.b],k.t)*H;k.phase+=.06*dt}}
 for(const k of kittens){
  if(k.happy||k.fall)continue;
  for(const ch of chicks){
